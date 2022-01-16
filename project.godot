@@ -21,7 +21,16 @@ _global_script_class_icons={
 [application]
 
 config/name="MetamaskAddon"
+run/main_scene="res://test/TestScene.tscn"
 config/icon="res://icon.png"
+
+[autoload]
+
+Metamask="*res://addons/metamask/Metamask.tscn"
+
+[editor_plugins]
+
+enabled=PoolStringArray( "res://addons/metamask/plugin.cfg" )
 
 [physics]
 

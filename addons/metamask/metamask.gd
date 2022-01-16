@@ -28,10 +28,9 @@ func _protectedGet():
     push_error('cannot access protected variable')
 
 func _ready():
-    _create_callback_handler()
-    _add_convert_util()
-    _load_config()
     _init_placeholder_vars()
+    _create_callback_handler()
+    _load_config()
 
 func _create_callback_handler():
     var script_txt = 'function callback_handler(f) { return (...args) => { window.last_returned_value = args; f(args); } }'
@@ -40,10 +39,6 @@ func _create_callback_handler():
     var text_block = _document.createTextNode(script_txt)
     script_block.appendChild(text_block)
     _document.head.appendChild(script_block)
-
-func _add_convert_util():
-    var convert_util = JavaScriptConvert.new()
-    convert_util._
 
 func _load_config():
     # Setup defaults for values if they are not already there
@@ -58,7 +53,7 @@ func _load_config():
 func _create_application_icon():
     var gd_icon = _document.getElementById('-gd-engine-icon')
     var metamaskIcon = _document.createElement('link')
-    metamaskIcon.id = 'metamaskId'
+    metamaskIcon.id = 'metamaskIcon'
     metamaskIcon.rel = 'shortcut icon'
     metamaskIcon.href = gd_icon.href
     _document.head.appendChild(metamaskIcon)
@@ -81,20 +76,20 @@ func is_network_connected() -> bool:
 # Requests permission to view user's accounts. Fires request_accounts_finished when complete
 # Currently only returns the active account in Metamask, but passes back an Array for future proofing
 func request_accounts():
-    var request_body = JavaScript.create_object('Object', {'mapping': 'eth_requestAccounts'})
+    var request_body = JavaScript.create_object('Object')
+    request_body['method'] = 'eth_requestAccounts'
     _ethereum.request(request_body).then(
-        # Success callback
-        _window.callback_helper(_request_success),
-        # Error callback
-        _window.callback_helper(_request_failed)
-       )
+        _window.callback_handler(_request_success)
+    ).catch(
+        _window.callback_handler(_request_failed)
+    )
 
 func _request_success_callback(_args):
     var last = _window.last_returned_value
-    var addresses = convert_util.to_GDScript(last)
+    var addresses = convert_util.to_GDScript(last[0])
     emit_signal("request_accounts_finished", addresses, null)
 
 func _request_failed_callback(_args):
     var last = _window.last_returned_value
-    var error = convert_util.to_GDScript(last)
+    var error = convert_util.to_GDScript(last[0])
     emit_signal("request_accounts_finished", null, error)
