@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=2]
 
-[ext_resource path="res://addons/metamask/Metamask.gd" type="Script" id=1]
+[ext_resource path="res://addons/metamask/metamask.gd" type="Script" id=1]
 [ext_resource path="res://addons/metamask/convert_util.gd" type="Script" id=2]
 
 [node name="Metamask" type="Node"]
