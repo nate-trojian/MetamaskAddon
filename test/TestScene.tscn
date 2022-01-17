@@ -65,17 +65,38 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="UserInfoTextEdit" type="TextEdit" parent="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer"]
-margin_top = 80.0
-margin_right = 444.0
-margin_bottom = 536.0
-size_flags_vertical = 3
-readonly = true
-
-[node name="AddressPanelContainer" type="PanelContainer" parent="PanelSplitContainer"]
+[node name="OutputPanelContainer" type="PanelContainer" parent="PanelSplitContainer"]
 margin_left = 516.0
 margin_right = 1024.0
 margin_bottom = 600.0
 size_flags_horizontal = 3
+
+[node name="MarginContainer" type="MarginContainer" parent="PanelSplitContainer/OutputPanelContainer"]
+margin_left = 7.0
+margin_top = 7.0
+margin_right = 501.0
+margin_bottom = 593.0
+custom_constants/margin_right = 10
+custom_constants/margin_top = 10
+custom_constants/margin_left = 10
+custom_constants/margin_bottom = 10
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelSplitContainer/OutputPanelContainer/MarginContainer"]
+margin_left = 10.0
+margin_top = 10.0
+margin_right = 484.0
+margin_bottom = 576.0
+
+[node name="OutputLabel" type="Label" parent="PanelSplitContainer/OutputPanelContainer/MarginContainer/VBoxContainer"]
+margin_right = 474.0
+margin_bottom = 14.0
+text = "Output Log"
+
+[node name="OutputTextEdit" type="TextEdit" parent="PanelSplitContainer/OutputPanelContainer/MarginContainer/VBoxContainer"]
+margin_top = 18.0
+margin_right = 474.0
+margin_bottom = 566.0
+size_flags_vertical = 3
+readonly = true
 
 [connection signal="pressed" from="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/ConnectButton" to="." method="_on_ConnectButton_pressed"]
