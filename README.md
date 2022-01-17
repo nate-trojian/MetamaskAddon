@@ -12,3 +12,5 @@ From Github
 2. Copy everything in the `addons` folder to the `addons` folder in your Godot project
 3. In Godot, go to `Project > Project Settings... > Plugins` and find the row with the name `Metamask`
 4. Check the box in the `Status` column to `Enable`
+
+![Enable Plugin](screenshots/enable_plugin.png)
