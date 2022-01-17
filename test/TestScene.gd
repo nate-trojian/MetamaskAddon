@@ -3,6 +3,8 @@ extends Control
 onready var installed_check_box: CheckBox = $PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/InstalledCheckBox
 onready var connected_check_box: CheckBox = $PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/ConnectedCheckBox
 onready var connect_button: Button = $PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/ConnectButton
+onready var chain_id_line_edit: LineEdit = $PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/SwitchChainContainer/ChainIdLineEdit
+onready var switch_chain_button: Button = $PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/SwitchChainContainer/SwitchChainButton
 onready var output_text_edit: TextEdit = $PanelSplitContainer/OutputPanelContainer/MarginContainer/VBoxContainer/OutputTextEdit
 
 func _ready():
@@ -26,6 +28,7 @@ func _ready():
     Metamask.connect("request_accounts_finished", self, "_on_Metamask_request_accounts_finished")
     Metamask.connect("accounts_changed", self, "_on_Metamask_accounts_changed")
     Metamask.connect("chain_changed", self, "_on_Metamask_chain_changed")
+    Metamask.connect("switch_chain_finished", self, "_on_Metamask_switch_chain_finished")
 
 func _print(text: String):
     output_text_edit.text += text + "\n"
@@ -53,7 +56,21 @@ func _on_Metamask_request_accounts_finished(success, error):
         _print("\t" + addr)
 
 func _on_Metamask_accounts_changed(new_accounts):
-    _print("User Accounts Changed To " + new_accounts[0])
+    _print("User Accounts changed to " + new_accounts[0])
 
 func _on_Metamask_chain_changed(new_chain_id):
-    _print("User Connected Chain Changed To " + new_chain_id)
+    _print("User Connected Chain changed to " + new_chain_id)
+
+func _on_SwitchChainButton_pressed():
+    var new_chain_id = chain_id_line_edit.text
+    _print("Attempting to Switch Chain to " + new_chain_id)
+    switch_chain_button.disabled = true
+    Metamask.switch_to_chain(new_chain_id)
+
+func _on_Metamask_switch_chain_finished(error):
+    switch_chain_button.disabled = false
+    if error == null:
+        _print("Chain Switch Succeeded...")
+        return
+    _print("Chain Switch Failed...")
+    _print("Reason: " + error.message)

@@ -65,6 +65,31 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
+[node name="HSeparator" type="HSeparator" parent="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer"]
+margin_top = 80.0
+margin_right = 444.0
+margin_bottom = 84.0
+
+[node name="SwitchChainContainer" type="HBoxContainer" parent="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer"]
+margin_top = 88.0
+margin_right = 444.0
+margin_bottom = 112.0
+
+[node name="ChainIdLineEdit" type="LineEdit" parent="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/SwitchChainContainer"]
+margin_right = 348.0
+margin_bottom = 24.0
+size_flags_horizontal = 3
+placeholder_text = "New Chain ID"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="SwitchChainButton" type="Button" parent="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/SwitchChainContainer"]
+margin_left = 352.0
+margin_right = 444.0
+margin_bottom = 24.0
+text = "Switch Chain"
+
 [node name="OutputPanelContainer" type="PanelContainer" parent="PanelSplitContainer"]
 margin_left = 516.0
 margin_right = 1024.0
@@ -100,3 +125,4 @@ size_flags_vertical = 3
 readonly = true
 
 [connection signal="pressed" from="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/ConnectButton" to="." method="_on_ConnectButton_pressed"]
+[connection signal="pressed" from="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/SwitchChainContainer/SwitchChainButton" to="." method="_on_SwitchChainButton_pressed"]
