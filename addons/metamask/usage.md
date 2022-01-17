@@ -34,14 +34,14 @@ Signal when Metamask disconnects from the active chain
 # error: Optional[Dict[String, Any]] - Dict containing "code" and "message" keys. Null if call succeeded
 signal request_accounts_finished(success, error)
 ```
-Signal to get result of [request_accounts](#Request User Account(s)) call
+Signal to get result of [request_accounts](#request-user-accounts) call
 
 ### Switch Chain Result
 ```
 # error: Optional[Dict[String, Any]] - Dict containing "code" and "message" keys. Null if call succeeded
 signal switch_chain_finished(error)
 ```
-Signal to get result of [switch_to_chain](#Switch to Chain) call
+Signal to get result of [switch_to_chain](#switch-to-chain) call
 
 ## Functions
 ### Is Metamask Installed
