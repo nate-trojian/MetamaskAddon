@@ -16,6 +16,15 @@ signal accounts_changed(new_accounts)
 # New Chain Id - String corresponding to the new Chain's ID
 # See https://chainlist.org/ for list of each chain and their ID
 signal chain_changed(new_chain_id)
+# Signal when Metamask connects to the active chain
+# chain_id: String - Id of chain Metamask has connected to
+signal chain_connected(chain_id)
+# Signal when Metamask disconnects from the active chain
+# error: Dict - Contains "code" and "message" fields describing the error that occurred
+signal chain_disconnected(error)
+# Signal when a message is received by Metamask
+# message: Dict - Contains "type" and "data" fields 
+signal message_received(message)
 
 onready var convert_util: JavaScriptConvert = $JavaScriptConvert
 
@@ -24,21 +33,32 @@ onready var convert_util: JavaScriptConvert = $JavaScriptConvert
 var _base_property = 'plugins/metamask/' setget _protectedSet, _protectedGet
 var _property_defaults = {
     'use_application_icon': false,
-   } setget _protectedSet, _protectedGet
+} setget _protectedSet, _protectedGet
 
 var _document = JavaScript.get_interface('document') setget _protectedSet, _protectedGet
 var _window = JavaScript.get_interface('window') setget _protectedSet, _protectedGet
 var _ethereum = JavaScript.get_interface('ethereum') setget _protectedSet, _protectedGet
 
-var _accounts_listener: JavaScriptObject = null setget _protectedSet, _protectedGet
-var _chain_listener: JavaScriptObject = null setget _protectedSet, _protectedGet
-
-var _accounts_callback = JavaScript.create_callback(self, "_on_accounts_changed") setget _protectedSet, _protectedGet
-var _chain_callback = JavaScript.create_callback(self, "_on_chain_changed") setget _protectedSet, _protectedGet
+# Request Callbacks
 var _request_success = JavaScript.create_callback(self, "_request_accounts_success") setget _protectedSet, _protectedGet
 var _request_failed = JavaScript.create_callback(self, "_request_accounts_failed") setget _protectedSet, _protectedGet
 var _switch_success = JavaScript.create_callback(self, "_switch_chain_success") setget _protectedSet, _protectedGet
 var _switch_failed = JavaScript.create_callback(self, "_switch_chain_failed") setget _protectedSet, _protectedGet
+
+# Event Callbacks
+var _accounts_callback = JavaScript.create_callback(self, "_on_accounts_changed") setget _protectedSet, _protectedGet
+var _chain_callback = JavaScript.create_callback(self, "_on_chain_changed") setget _protectedSet, _protectedGet
+var _connected_callback = JavaScript.create_callback(self, "_on_chain_connected") setget _protectedSet, _protectedGet
+var _disconnected_callback = JavaScript.create_callback(self, "_on_chain_disconnected") setget _protectedSet, _protectedGet
+var _message_callback = JavaScript.create_callback(self, "_on_message_received") setget _protectedSet, _protectedGet
+
+var _events_to_callbacks: Dictionary = {
+    'accountsChanged': _accounts_callback,
+    'chainChanged': _chain_callback,
+    'connect': _connected_callback,
+    'disconnect': _disconnected_callback,
+    'message': _message_callback
+} setget _protectedSet, _protectedGet
 
 func _protectedSet(_val):
     push_error('cannot access protected variable')
@@ -84,14 +104,14 @@ func _init_placeholder_vars():
     _window.last_returned_value = last_returned_value
 
 func _exit_tree():
-    if _accounts_listener != null:
-        _ethereum.removeListener('accountsChanged', _accounts_callback)
-    if _chain_listener != null:
-        _ethereum.removeListener('chainChanged', _chain_callback)
+    for event in _events_to_callbacks:
+        var callback = _events_to_callbacks[event]
+        _ethereum.removeListener(event, callback)
 
 func _create_event_listeners():
-    _accounts_listener = _ethereum.on('accountsChanged', _accounts_callback)
-    _chain_listener = _ethereum.on('chainChanged', _chain_callback)
+    for event in _events_to_callbacks:
+        var callback = _events_to_callbacks[event]
+        _ethereum.on(event, callback)
 
 func _on_accounts_changed(new_accounts):
     var val = convert_util.to_GDScript(new_accounts[0])
@@ -100,6 +120,18 @@ func _on_accounts_changed(new_accounts):
 func _on_chain_changed(new_chain):
     var val = convert_util.to_GDScript(new_chain[0])
     emit_signal("chain_changed", val)
+
+func _on_chain_connected(chain):
+    var val = convert_util.to_GDScript(chain[0])
+    emit_signal("chain_connected", val)
+
+func _on_chain_disconnected(error):
+    var val = convert_util.to_GDScript(error[0])
+    emit_signal("chain_disconnected", val)
+
+func _on_message_received(message):
+    var val = convert_util.to_GDScript(message[0])
+    emit_signal("message_received", val)
 
 # Checks if client has Metamask installed
 # NOTE - This is not 100% accurate.  Because it is checking a JS property, this can be faked by another wallet provider.
@@ -140,9 +172,9 @@ func switch_to_chain(chain_id: String):
     param_body['chainId'] = chain_id
     request_body['params'] = JavaScript.create_object('Array', param_body)
     _ethereum.request(request_body).then(
-        _window.callback_handler(_request_success)
+        _window.callback_handler(_switch_success)
     ).catch(
-        _window.callback_handler(_request_failed)
+        _window.callback_handler(_switch_failed)
     )
 
 func _switch_chain_success(_args):
