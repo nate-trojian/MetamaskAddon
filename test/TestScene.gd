@@ -29,6 +29,9 @@ func _ready():
     Metamask.connect("accounts_changed", self, "_on_Metamask_accounts_changed")
     Metamask.connect("chain_changed", self, "_on_Metamask_chain_changed")
     Metamask.connect("switch_chain_finished", self, "_on_Metamask_switch_chain_finished")
+    Metamask.connect("chain_connected", self, "_on_Metamask_chain_connected")
+    Metamask.connect("chain_disconnected", self, "_on_Metamask_chain_disconnected")
+    Metamask.connect("message_received", self, "_on_Metamask_message_received")
 
 func _print(text: String):
     output_text_edit.text += text + "\n"
@@ -60,6 +63,17 @@ func _on_Metamask_accounts_changed(new_accounts):
 
 func _on_Metamask_chain_changed(new_chain_id):
     _print("User Connected Chain changed to " + new_chain_id)
+
+func _on_Metamask_chain_connected(chain_id):
+    _print("Metamask connected to chain: " + chain_id)
+
+func _on_Metamask_chain_disconnected(error):
+    _print("Metamask was disconnected from current chain")
+    _print("Reason: " + error.message)
+
+func _on_Metamask_message_received(message):
+    _print("Metamask received message of type " + message.type)
+    _print("Message : " + str(message.data))
 
 func _on_SwitchChainButton_pressed():
     var new_chain_id = chain_id_line_edit.text
