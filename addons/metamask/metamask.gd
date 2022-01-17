@@ -4,6 +4,10 @@ extends Node
 # Success - Array of address strings. Null if call failed
 # Error - Dict containing "code" and "message" keys. Null if call succeeded
 signal request_accounts_finished(success, error)
+# Signal from switch_chain
+# Success returns null, so it has been omitted
+# Error - Dict containing "code" and "message" keys. Null if call succeeded
+signal switch_chain_finished(error)
 # Signal when user changes their active accounts
 # Currently only one account is active at a time but can potentially be more in the future
 # New Accounts - Array of accounts user has changed to AND Application has permissions to see
@@ -29,10 +33,12 @@ var _ethereum = JavaScript.get_interface('ethereum') setget _protectedSet, _prot
 var _accounts_listener: JavaScriptObject = null setget _protectedSet, _protectedGet
 var _chain_listener: JavaScriptObject = null setget _protectedSet, _protectedGet
 
-var _request_success = JavaScript.create_callback(self, "_request_success_callback") setget _protectedSet, _protectedGet
-var _request_failed = JavaScript.create_callback(self, "_request_failed_callback") setget _protectedSet, _protectedGet
 var _accounts_callback = JavaScript.create_callback(self, "_on_accounts_changed") setget _protectedSet, _protectedGet
 var _chain_callback = JavaScript.create_callback(self, "_on_chain_changed") setget _protectedSet, _protectedGet
+var _request_success = JavaScript.create_callback(self, "_request_accounts_success") setget _protectedSet, _protectedGet
+var _request_failed = JavaScript.create_callback(self, "_request_accounts_failed") setget _protectedSet, _protectedGet
+var _switch_success = JavaScript.create_callback(self, "_switch_chain_success") setget _protectedSet, _protectedGet
+var _switch_failed = JavaScript.create_callback(self, "_switch_chain_failed") setget _protectedSet, _protectedGet
 
 func _protectedSet(_val):
     push_error('cannot access protected variable')
@@ -116,12 +122,33 @@ func request_accounts():
         _window.callback_handler(_request_failed)
     )
 
-func _request_success_callback(_args):
+func _request_accounts_success(_args):
     var last = _window.last_returned_value
     var addresses = convert_util.to_GDScript(last[0])
     emit_signal('request_accounts_finished', addresses, null)
 
-func _request_failed_callback(_args):
+func _request_accounts_failed(_args):
     var last = _window.last_returned_value
     var error = convert_util.to_GDScript(last[0])
     emit_signal('request_accounts_finished', null, error)
+
+# Sends notification to user to switch to the chain with the provided ID
+func switch_to_chain(chain_id: String):
+    var request_body = JavaScript.create_object('Object')
+    request_body['method'] = 'wallet_switchEthereumChain'
+    var param_body = JavaScript.create_object('Object')
+    param_body['chainId'] = chain_id
+    request_body['params'] = JavaScript.create_object('Array', param_body)
+    _ethereum.request(request_body).then(
+        _window.callback_handler(_request_success)
+    ).catch(
+        _window.callback_handler(_request_failed)
+    )
+
+func _switch_chain_success(_args):
+    emit_signal("switch_chain_finished", null)
+
+func _switch_chain_failed(_args):
+    var last = _window.last_returned_value
+    var error = convert_util.to_GDScript(last[0])
+    emit_signal('switch_chain_finished', error)
