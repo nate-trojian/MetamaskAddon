@@ -8,6 +8,10 @@ signal request_accounts_finished(success, error)
 # Success returns null, so it has been omitted
 # Error - Dict containing "code" and "message" keys. Null if call succeeded
 signal switch_chain_finished(error)
+# Signal from client_version
+# success: String - Client version
+# error: Dict - Dict containing "code" and "message" keys. Null if call succeeded
+signal client_version_finished(success, error)
 # Signal when user changes their active accounts
 # Currently only one account is active at a time but can potentially be more in the future
 # New Accounts - Array of accounts user has changed to AND Application has permissions to see
@@ -44,6 +48,8 @@ var _request_success = JavaScript.create_callback(self, "_request_accounts_succe
 var _request_failed = JavaScript.create_callback(self, "_request_accounts_failed") setget _protectedSet, _protectedGet
 var _switch_success = JavaScript.create_callback(self, "_switch_chain_success") setget _protectedSet, _protectedGet
 var _switch_failed = JavaScript.create_callback(self, "_switch_chain_failed") setget _protectedSet, _protectedGet
+var _version_success = JavaScript.create_callback(self, "_client_version_success") setget _protectedSet, _protectedGet
+var _version_failed = JavaScript.create_callback(self, "_client_version_failed") setget _protectedSet, _protectedGet
 
 # Event Callbacks
 var _accounts_callback = JavaScript.create_callback(self, "_on_accounts_changed") setget _protectedSet, _protectedGet
@@ -156,20 +162,14 @@ func selected_account() -> String:
 func request_accounts():
     var request_body = JavaScript.create_object('Object')
     request_body['method'] = 'eth_requestAccounts'
-    _ethereum.request(request_body).then(
-        _window.callback_handler(_request_success)
-    ).catch(
-        _window.callback_handler(_request_failed)
-    )
+    _window.requestWrapper(request_body, _request_success, _request_failed)
 
-func _request_accounts_success(_args):
-    var last = _window.last_returned_value
-    var addresses = convert_util.to_GDScript(last[0])
+func _request_accounts_success(args):
+    var addresses = convert_util.to_GDScript(args[0])
     emit_signal('request_accounts_finished', addresses, null)
 
-func _request_accounts_failed(_args):
-    var last = _window.last_returned_value
-    var error = convert_util.to_GDScript(last[0])
+func _request_accounts_failed(args):
+    var error = convert_util.to_GDScript(args[0])
     emit_signal('request_accounts_finished', null, error)
 
 # Sends notification to user to switch to the chain with the provided ID
@@ -179,16 +179,25 @@ func switch_to_chain(chain_id: String):
     var param_body = JavaScript.create_object('Object')
     param_body['chainId'] = chain_id
     request_body['params'] = JavaScript.create_object('Array', param_body)
-    _ethereum.request(request_body).then(
-        _window.callback_handler(_switch_success)
-    ).catch(
-        _window.callback_handler(_switch_failed)
-    )
+    _window.requestWrapper(request_body, _switch_success, _switch_failed)
 
 func _switch_chain_success(_args):
     emit_signal("switch_chain_finished", null)
 
-func _switch_chain_failed(_args):
-    var last = _window.last_returned_value
-    var error = convert_util.to_GDScript(last[0])
+func _switch_chain_failed(args):
+    var error = convert_util.to_GDScript(args[0])
     emit_signal('switch_chain_finished', error)
+
+# Request the version of the client we are using
+func client_version():
+    var request_body = JavaScript.create_object('Object')
+    request_body['method'] = 'web3_clientVersion'
+    _window.requestWrapper(request_body, _version_success, _version_failed)
+
+func _client_version_success(args):
+    var version = convert_util.to_GDScript(args[0])
+    emit_signal('client_version_finished', version, null)
+
+func _client_version_failed(args):
+    var error = convert_util.to_GDScript(args[0])
+    emit_signal('client_version_finished', null, error)
