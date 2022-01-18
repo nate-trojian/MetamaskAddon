@@ -26,6 +26,7 @@ func _ready():
     _print("Metamask is connected...")
     # Get information on Metamask connection
     _print("Current Chain: " + Metamask.current_chain())
+    _print("Connected Account: " + str(Metamask.selected_account()))
     # Connect signals
 # warning-ignore:return_value_discarded
     Metamask.connect("request_accounts_finished", self, "_on_Metamask_request_accounts_finished")

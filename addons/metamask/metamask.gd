@@ -147,6 +147,10 @@ func is_network_connected() -> bool:
 func current_chain() -> String:
     return _ethereum.chainId
 
+# Gets the active account address or null if no account is connected
+func selected_account() -> String:
+    return _ethereum.selectedAddress
+
 # Requests permission to view user's accounts. Fires request_accounts_finished when complete
 # Currently only returns the active account in Metamask, but passes back an Array for future proofing
 func request_accounts():
