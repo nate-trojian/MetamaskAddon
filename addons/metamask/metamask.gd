@@ -74,14 +74,16 @@ func _protectedGet():
 
 func _ready():
     _init_placeholder_vars()
-    _create_callback_handler()
+    _create_request_wrapper()
     _load_config()
     _create_event_listeners()
 
-func _create_callback_handler():
-    var script_txt = 'function callback_handler(f) { return (...args) => { window.last_returned_value = args; f(args); } }'
+func _create_request_wrapper():
+    # TODO - See if there's a good way of importing this at run time
+    var script_txt = "async function requestWrapper(requestBody, success, failure) { try { result = await ethereum.request(requestBody); console.log(result); success(result); } catch (e) { console.error(e); err_dict = { 'code': e.code, 'message': e.message }; failure(err_dict); }}"
+    # Create the block
     var script_block = _document.createElement('script')
-    script_block.id = 'callbackHelper'
+    script_block.id = 'requestWrapper'
     var text_block = _document.createTextNode(script_txt)
     script_block.appendChild(text_block)
     _document.head.appendChild(script_block)
