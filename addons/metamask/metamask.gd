@@ -143,6 +143,10 @@ func has_metamask() -> bool:
 func is_network_connected() -> bool:
     return _ethereum.isConnected()
 
+# Gets the current connected chain id
+func current_chain() -> String:
+    return _ethereum.chainId
+
 # Requests permission to view user's accounts. Fires request_accounts_finished when complete
 # Currently only returns the active account in Metamask, but passes back an Array for future proofing
 func request_accounts():

@@ -24,13 +24,22 @@ func _ready():
         _fail_init()
         return
     _print("Metamask is connected...")
+    # Get information on Metamask connection
+    _print("Current Chain: " + Metamask.current_chain())
     # Connect signals
+# warning-ignore:return_value_discarded
     Metamask.connect("request_accounts_finished", self, "_on_Metamask_request_accounts_finished")
+# warning-ignore:return_value_discarded
     Metamask.connect("accounts_changed", self, "_on_Metamask_accounts_changed")
+# warning-ignore:return_value_discarded
     Metamask.connect("chain_changed", self, "_on_Metamask_chain_changed")
+# warning-ignore:return_value_discarded
     Metamask.connect("switch_chain_finished", self, "_on_Metamask_switch_chain_finished")
+# warning-ignore:return_value_discarded
     Metamask.connect("chain_connected", self, "_on_Metamask_chain_connected")
+# warning-ignore:return_value_discarded
     Metamask.connect("chain_disconnected", self, "_on_Metamask_chain_disconnected")
+# warning-ignore:return_value_discarded
     Metamask.connect("message_received", self, "_on_Metamask_message_received")
 
 func _print(text: String):
