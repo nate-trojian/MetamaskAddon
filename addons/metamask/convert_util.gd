@@ -56,3 +56,16 @@ func to_GDScript(val):
             # Primitives are already converted to GDscript types
             return val
 
+# Convert from GDScript Array to JavaScript Array
+func arr_to_js(arr: Array) -> JavaScriptObject:
+    var val = JavaScript.create_object('Array', len(arr))
+    for i in range(len(arr)):
+        val[i] = arr[i]
+    return val
+
+# Convert from GDScript Dictionary to JavaScript Dictionary
+func dict_to_js(dict: Dictionary) -> JavaScriptObject:
+    var val = JavaScript.create_object('Object')
+    for key in dict:
+        val[key] = dict[key]
+    return val

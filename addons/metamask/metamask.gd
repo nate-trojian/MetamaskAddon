@@ -1,17 +1,16 @@
 extends Node
 
 # Signal from request_accounts
-# Success - Array of address strings. Null if call failed
-# Error - Dict containing "code" and "message" keys. Null if call succeeded
-signal request_accounts_finished(success, error)
+# response: Dict - Response dictionary containing "result" and "error", one of which is always null
+signal request_accounts_finished(response)
 # Signal from switch_chain
 # Success returns null, so it has been omitted
 # Error - Dict containing "code" and "message" keys. Null if call succeeded
-signal switch_chain_finished(error)
+signal switch_chain_finished(response)
 # Signal from client_version
 # success: String - Client version
 # error: Dict - Dict containing "code" and "message" keys. Null if call succeeded
-signal client_version_finished(success, error)
+signal client_version_finished(response)
 # Signal when user changes their active accounts
 # Currently only one account is active at a time but can potentially be more in the future
 # New Accounts - Array of accounts user has changed to AND Application has permissions to see
@@ -44,12 +43,8 @@ var _window = JavaScript.get_interface('window') setget _protectedSet, _protecte
 var _ethereum = JavaScript.get_interface('ethereum') setget _protectedSet, _protectedGet
 
 # Request Callbacks
-var _request_success = JavaScript.create_callback(self, "_request_accounts_success") setget _protectedSet, _protectedGet
-var _request_failed = JavaScript.create_callback(self, "_request_accounts_failed") setget _protectedSet, _protectedGet
-var _switch_success = JavaScript.create_callback(self, "_switch_chain_success") setget _protectedSet, _protectedGet
-var _switch_failed = JavaScript.create_callback(self, "_switch_chain_failed") setget _protectedSet, _protectedGet
-var _version_success = JavaScript.create_callback(self, "_client_version_success") setget _protectedSet, _protectedGet
-var _version_failed = JavaScript.create_callback(self, "_client_version_failed") setget _protectedSet, _protectedGet
+var _eth_success_callback = JavaScript.create_callback(self, "_eth_request_success") setget _protectedSet, _protectedGet
+var _eth_failure_callback = JavaScript.create_callback(self, "_eth_request_failure") setget _protectedSet, _protectedGet
 
 # Event Callbacks
 var _accounts_callback = JavaScript.create_callback(self, "_on_accounts_changed") setget _protectedSet, _protectedGet
@@ -73,14 +68,13 @@ func _protectedGet():
     push_error('cannot access protected variable')
 
 func _ready():
-    _init_placeholder_vars()
     _create_request_wrapper()
     _load_config()
     _create_event_listeners()
 
 func _create_request_wrapper():
     # TODO - See if there's a good way of importing this at run time
-    var script_txt = "async function requestWrapper(requestBody, success, failure) { try { result = await ethereum.request(requestBody); console.log(result); success(result); } catch (e) { console.error(e); err_dict = { 'code': e.code, 'message': e.message }; failure(err_dict); }}"
+    var script_txt = "async function requestWrapper(requestBody, signal, success, failure) { try { result = await ethereum.request(requestBody); console.log(result); success(signal, result); } catch (e) { console.error(e); err_dict = { 'code': e.code, 'message': e.message }; failure(signal, err_dict); }}"
     # Create the block
     var script_block = _document.createElement('script')
     script_block.id = 'requestWrapper'
@@ -106,20 +100,15 @@ func _create_application_icon():
     metamaskIcon.href = gd_icon.href
     _document.head.appendChild(metamaskIcon)
 
-func _init_placeholder_vars():
-    # Create last_returned_value holder
-    var last_returned_value = JavaScript.create_object("Array")
-    _window.last_returned_value = last_returned_value
+func _create_event_listeners():
+    for event in _events_to_callbacks:
+        var callback = _events_to_callbacks[event]
+        _ethereum.on(event, callback)
 
 func _exit_tree():
     for event in _events_to_callbacks:
         var callback = _events_to_callbacks[event]
         _ethereum.removeListener(event, callback)
-
-func _create_event_listeners():
-    for event in _events_to_callbacks:
-        var callback = _events_to_callbacks[event]
-        _ethereum.on(event, callback)
 
 func _on_accounts_changed(new_accounts):
     var val = convert_util.to_GDScript(new_accounts[0])
@@ -140,6 +129,47 @@ func _on_chain_disconnected(error):
 func _on_message_received(message):
     var val = convert_util.to_GDScript(message[0])
     emit_signal("message_received", val)
+
+# Helper method for building the request body for RPC calls
+func _build_request_body(method: String, params = null) -> JavaScriptObject:
+    var request_body = JavaScript.create_object('Object')
+    request_body['method'] = method
+    match typeof(params):
+        TYPE_NIL:
+            # If params is null, just continue
+            pass
+        TYPE_ARRAY:
+            request_body['params'] = convert_util.arr_to_js(params)
+        TYPE_DICTIONARY:
+            var params_body = convert_util.dict_to_js(params)
+            request_body['params'] = JavaScript.create_object('Array', params_body)
+        _:
+            # If we give just a single primitive, give it in an array
+            # Looking at you eth_getBalance
+            request_body['params'] = JavaScript.create_object('Array', 1)
+            request_body['params'][0] = params
+    return request_body
+
+# Request wrapper so we can have default arguments
+func _request_wrapper(request_body: JavaScriptObject,
+                        signal_name: String,
+                        success: JavaScriptObject = _eth_success_callback,
+                        failure: JavaScriptObject = _eth_failure_callback):
+    # Since we are doing dynamic signal emitting, we better make sure that it actually exists
+    if not self.has_signal(signal_name):
+        push_error("Unknown signal name: " + signal_name)
+        return
+    _window.requestWrapper(request_body, signal_name, success, failure)
+
+func _eth_request_success(args):
+    var signal_name = args[0]
+    var result = convert_util.to_GDScript(args[1])
+    emit_signal(signal_name, {'result': result, 'error': null})
+
+func _eth_request_failure(args):
+    var signal_name = args[0]
+    var error = convert_util.to_GDScript(args[1])
+    emit_signal(signal_name, {'result': null, 'error': error})
 
 # Checks if client has Metamask installed
 # NOTE - This is not 100% accurate.  Because it is checking a JS property, this can be faked by another wallet provider.
@@ -162,44 +192,15 @@ func selected_account() -> String:
 # Requests permission to view user's accounts. Fires request_accounts_finished when complete
 # Currently only returns the active account in Metamask, but passes back an Array for future proofing
 func request_accounts():
-    var request_body = JavaScript.create_object('Object')
-    request_body['method'] = 'eth_requestAccounts'
-    _window.requestWrapper(request_body, _request_success, _request_failed)
-
-func _request_accounts_success(args):
-    var addresses = convert_util.to_GDScript(args[0])
-    emit_signal('request_accounts_finished', addresses, null)
-
-func _request_accounts_failed(args):
-    var error = convert_util.to_GDScript(args[0])
-    emit_signal('request_accounts_finished', null, error)
+    var request_body = _build_request_body('eth_requestAccounts')
+    _request_wrapper(request_body, 'request_accounts_finished')
 
 # Sends notification to user to switch to the chain with the provided ID
 func switch_to_chain(chain_id: String):
-    var request_body = JavaScript.create_object('Object')
-    request_body['method'] = 'wallet_switchEthereumChain'
-    var param_body = JavaScript.create_object('Object')
-    param_body['chainId'] = chain_id
-    request_body['params'] = JavaScript.create_object('Array', param_body)
-    _window.requestWrapper(request_body, _switch_success, _switch_failed)
-
-func _switch_chain_success(_args):
-    emit_signal("switch_chain_finished", null)
-
-func _switch_chain_failed(args):
-    var error = convert_util.to_GDScript(args[0])
-    emit_signal('switch_chain_finished', error)
+    var request_body = _build_request_body('wallet_switchEthereumChain', {'chainId': chain_id})
+    _request_wrapper(request_body, 'switch_chain_finished')
 
 # Request the version of the client we are using
 func client_version():
-    var request_body = JavaScript.create_object('Object')
-    request_body['method'] = 'web3_clientVersion'
-    _window.requestWrapper(request_body, _version_success, _version_failed)
-
-func _client_version_success(args):
-    var version = convert_util.to_GDScript(args[0])
-    emit_signal('client_version_finished', version, null)
-
-func _client_version_failed(args):
-    var error = convert_util.to_GDScript(args[0])
-    emit_signal('client_version_finished', null, error)
+    var request_body = _build_request_body('web3_clientVersion')
+    _window.requestWrapper(request_body, 'client_version_finished')

@@ -51,36 +51,34 @@ func _fail_init():
     _print("Aborting remaining checks")
     connect_button.disabled = true
 
+# Example of inline handling of the signal from an RPC call
 func get_client_version():
     Metamask.client_version()
-    var result = yield(Metamask, "client_version_finished")
-    # Explicitly break out the variables for clarity
-    var version = result[0]
-    var error = result[1]
-    if error != null:
+    var response = yield(Metamask, "client_version_finished")
+    if response.error != null:
         # The call failed
         _print("Client Version Request Failed...")
-        _print("Reason: " + error.message)
+        _print("Reason: " + response.error.message)
         return
     # The call succeeded
-    _print("Client Version: " + version)
+    _print("Client Version: " + response.result)
 
 func _on_ConnectButton_pressed():
     _print("Attempting Request Accounts")
     connect_button.disabled = true
     Metamask.request_accounts()
 
-func _on_Metamask_request_accounts_finished(success, error):
+func _on_Metamask_request_accounts_finished(response):
     connect_button.disabled = false
-    if error != null:
+    if response.error != null:
         # The call failed
         _print("Accounts Request Failed...")
-        _print("Reason: " + error.message)
+        _print("Reason: " + response.error.message)
         return
     # The call succeeded
     _print("Accounts Request Succeeded...")
     _print("Addresses:")
-    for addr in success:
+    for addr in response.result:
         _print("\t" + addr)
 
 func _on_Metamask_accounts_changed(new_accounts):
@@ -106,10 +104,10 @@ func _on_SwitchChainButton_pressed():
     switch_chain_button.disabled = true
     Metamask.switch_to_chain(new_chain_id)
 
-func _on_Metamask_switch_chain_finished(error):
+func _on_Metamask_switch_chain_finished(response):
     switch_chain_button.disabled = false
-    if error == null:
-        _print("Chain Switch Succeeded...")
+    if response.error != null:
+        _print("Chain Switch Failed...")
+        _print("Reason: " + response.error.message)
         return
-    _print("Chain Switch Failed...")
-    _print("Reason: " + error.message)
+    _print("Chain Switch Succeeded...")
