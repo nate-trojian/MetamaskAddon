@@ -24,13 +24,24 @@ func _ready():
         _fail_init()
         return
     _print("Metamask is connected...")
+    # Get information on Metamask connection
+    _print("Current Chain: " + Metamask.current_chain())
+    _print("Connected Account: " + str(Metamask.selected_account()))
+    get_client_version()
     # Connect signals
+# warning-ignore:return_value_discarded
     Metamask.connect("request_accounts_finished", self, "_on_Metamask_request_accounts_finished")
+# warning-ignore:return_value_discarded
     Metamask.connect("accounts_changed", self, "_on_Metamask_accounts_changed")
+# warning-ignore:return_value_discarded
     Metamask.connect("chain_changed", self, "_on_Metamask_chain_changed")
+# warning-ignore:return_value_discarded
     Metamask.connect("switch_chain_finished", self, "_on_Metamask_switch_chain_finished")
+# warning-ignore:return_value_discarded
     Metamask.connect("chain_connected", self, "_on_Metamask_chain_connected")
+# warning-ignore:return_value_discarded
     Metamask.connect("chain_disconnected", self, "_on_Metamask_chain_disconnected")
+# warning-ignore:return_value_discarded
     Metamask.connect("message_received", self, "_on_Metamask_message_received")
 
 func _print(text: String):
@@ -39,6 +50,20 @@ func _print(text: String):
 func _fail_init():
     _print("Aborting remaining checks")
     connect_button.disabled = true
+
+func get_client_version():
+    Metamask.client_version()
+    var result = yield(Metamask, "client_version_finished")
+    # Explicitly break out the variables for clarity
+    var version = result[0]
+    var error = result[1]
+    if error != null:
+        # The call failed
+        _print("Client Version Request Failed...")
+        _print("Reason: " + error.message)
+        return
+    # The call succeeded
+    _print("Client Version: " + version)
 
 func _on_ConnectButton_pressed():
     _print("Attempting Request Accounts")

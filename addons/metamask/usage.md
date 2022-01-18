@@ -59,6 +59,15 @@ signal switch_chain_finished(error)
 ```
 
 
+### Client Version Result
+Signal to get result of [client_version](#client-version) call
+```
+# success: Optional[String] - Client version
+# error: Optional[Dict[String, Any]] - Dict containing "code" and "message" keys. Null if call succeeded
+signal client_version_finished(success, error)
+```
+
+
 ## Functions
 ### Is Metamask Installed
 Checks if client has Metamask installed
@@ -71,14 +80,28 @@ func has_metamask() -> bool
 ```
 
 
-### Is the Network Connected
+### Is Network Connected
 Checks if Metamask can talk to the current chain.  Returns false when the user is having network connectivity issues or the chain is experiencing difficulties
 ```
 func is_network_connected() -> bool
 ```
 
 
-### Request User Account(s)
+### Current Chain
+Gets the current connected chain id
+```
+func current_chain() -> String
+```
+
+
+### Selected Account
+Gets the active account address or null if no account is connected
+```
+func selected_account() -> String
+```
+
+
+### Request Accounts
 Requests permission to view user's accounts. Fires request_accounts_finished when complete.
 
 Currently only returns the active account in Metamask, but passes back an Array for future proofing
@@ -94,6 +117,12 @@ See https://chainlist.org/ for list of each chain and their ID
 ```
 # chain_id: String - ID of chain to connect to
 func switch_to_chain(chain_id: String)
+```
+
+### Client Version
+Gets the version of Metamask currently running
+```
+func client_version()
 ```
 
 
