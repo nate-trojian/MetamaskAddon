@@ -70,6 +70,27 @@ func client_version()
 ```
 
 
+### Wallet Balance
+Get the balance of wallet at address in wei
+
+Result is returned by [wallet_balance_finished](#wallet-balance-finished) signal
+```
+# address: String - Address of wallet to retrieve ETH balance from
+func wallet_balance(address: String)
+```
+
+
+### Token Balance
+Get the balance of an ERC20 token for an address
+
+Result is returned by [wallet_balance_finished](#wallet-balance-finished) signal
+```
+# token_address: String - Address of the Smart Contract for the ERC20 token
+# address: String - Address to retrieve balance against
+func token_balance(token_address: String, address: String)
+```
+
+
 ## Signals
 
 All `<function>_finished` signals share the same Response data structure
@@ -106,6 +127,22 @@ Signal to get result of [client_version](#client-version) call
 ```
 # response: Response[String] - Result is a string of the client's version
 signal client_version_finished(response)
+```
+
+
+### Wallet Balance Finished
+Signal to get result of [wallet_balance](#wallet-balance) call
+```
+# response: Response[Int] - Result is integer value of wallet balance in wei
+signal wallet_balance_finished(response) 
+```
+
+
+### Token Balance Finished
+Signal to get result of [token_balance](#token-balance) call
+```
+# response: Response[Int] - Result is integer value of token value associated to address
+signal token_balance_finished(response)
 ```
 
 
