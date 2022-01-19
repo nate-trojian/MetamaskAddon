@@ -130,6 +130,7 @@ func _on_Metamask_wallet_balance_finished(response):
         return
     _print("Wallet Balance Succeeded...")
     # Whatever operations you wish to do with the balance (like aggregate wallet balances)
-    # it's better to do it all in Wei, then convert to eth when you want to display a friendlier amount
+    # it's better to do it all in Wei, then when you want to display it convert it to a friendlier amount
     var wei_balance = response.result
-    _print("Wallet balance - " + str(Metamask.convert_util.wei_to_eth(wei_balance)) + " eth")
+    var eth_balance = Metamask.convert_util.convert_wei(wei_balance, Metamask.convert_util.Wei.to_Eth)
+    _print("Wallet balance - " + str(eth_balance) + " eth")

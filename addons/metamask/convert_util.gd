@@ -6,7 +6,14 @@ class_name JavaScriptConvert
 var _document = JavaScript.get_interface("document") setget _protectedSet, _protectedGet
 var _window = JavaScript.get_interface("window") setget _protectedSet, _protectedGet
 
-var _wei_eth_factor = float("1e18")
+enum Wei {
+    to_Gwei
+    to_Eth
+   }
+var _wei_convert = {
+    Wei.to_Gwei: float("1e9"),
+    Wei.to_Eth: float("1e18")
+}
 
 func _protectedSet(_val):
     push_error("cannot access protected variable")
@@ -72,5 +79,5 @@ func dict_to_js(dict: Dictionary) -> JavaScriptObject:
         val[key] = dict[key]
     return val
 
-func wei_to_eth(wei: int) -> float:
-    return wei / _wei_eth_factor
+func convert_wei(wei: int, factor: int = Wei.to_Eth) -> float:
+    return wei / _wei_convert[factor]
