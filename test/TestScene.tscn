@@ -70,50 +70,62 @@ margin_top = 80.0
 margin_right = 444.0
 margin_bottom = 84.0
 
-[node name="SwitchChainContainer" type="HBoxContainer" parent="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer"]
+[node name="ChainIdLineEdit" type="LineEdit" parent="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer"]
 margin_top = 88.0
 margin_right = 444.0
 margin_bottom = 112.0
-
-[node name="ChainIdLineEdit" type="LineEdit" parent="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/SwitchChainContainer"]
-margin_right = 348.0
-margin_bottom = 24.0
 size_flags_horizontal = 3
 placeholder_text = "New Chain ID"
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="SwitchChainButton" type="Button" parent="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/SwitchChainContainer"]
-margin_left = 352.0
+[node name="SwitchChainButton" type="Button" parent="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer"]
+margin_top = 116.0
 margin_right = 444.0
-margin_bottom = 24.0
+margin_bottom = 136.0
 text = "Switch Chain"
 
 [node name="HSeparator2" type="HSeparator" parent="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer"]
-margin_top = 116.0
+margin_top = 140.0
 margin_right = 444.0
-margin_bottom = 120.0
+margin_bottom = 144.0
 
-[node name="AddrBalanceContainer" type="HBoxContainer" parent="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer"]
-margin_top = 124.0
+[node name="BalanceLineEdit" type="LineEdit" parent="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer"]
+margin_top = 148.0
 margin_right = 444.0
-margin_bottom = 148.0
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="BalanceLineEdit" type="LineEdit" parent="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/AddrBalanceContainer"]
-margin_right = 306.0
-margin_bottom = 24.0
+margin_bottom = 172.0
 size_flags_horizontal = 3
 placeholder_text = "Wallet Address"
 
-[node name="BalanceButton" type="Button" parent="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/AddrBalanceContainer"]
-margin_left = 310.0
+[node name="BalanceButton" type="Button" parent="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer"]
+margin_top = 176.0
 margin_right = 444.0
-margin_bottom = 24.0
+margin_bottom = 196.0
 text = "Get Wallet Balance"
+
+[node name="HSeparator3" type="HSeparator" parent="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer"]
+margin_top = 200.0
+margin_right = 444.0
+margin_bottom = 204.0
+
+[node name="TokenBalanceAddressLineEdit" type="LineEdit" parent="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer"]
+margin_top = 208.0
+margin_right = 444.0
+margin_bottom = 232.0
+placeholder_text = "Token Address"
+
+[node name="WalletTokenBalanceLineEdit" type="LineEdit" parent="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer"]
+margin_top = 236.0
+margin_right = 444.0
+margin_bottom = 260.0
+placeholder_text = "Wallet Address"
+
+[node name="TokenBalanceButton" type="Button" parent="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer"]
+margin_top = 264.0
+margin_right = 444.0
+margin_bottom = 284.0
+text = "Get Token Balance"
 
 [node name="OutputPanelContainer" type="PanelContainer" parent="PanelSplitContainer"]
 margin_left = 516.0
@@ -150,5 +162,6 @@ size_flags_vertical = 3
 readonly = true
 
 [connection signal="pressed" from="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/ConnectButton" to="." method="_on_ConnectButton_pressed"]
-[connection signal="pressed" from="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/SwitchChainContainer/SwitchChainButton" to="." method="_on_SwitchChainButton_pressed"]
-[connection signal="pressed" from="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/AddrBalanceContainer/BalanceButton" to="." method="_on_BalanceButton_pressed"]
+[connection signal="pressed" from="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/SwitchChainButton" to="." method="_on_SwitchChainButton_pressed"]
+[connection signal="pressed" from="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/BalanceButton" to="." method="_on_BalanceButton_pressed"]
+[connection signal="pressed" from="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/TokenBalanceButton" to="." method="_on_TokenBalanceButton_pressed"]

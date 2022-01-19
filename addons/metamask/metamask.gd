@@ -13,6 +13,9 @@ signal client_version_finished(response)
 # Signal to get result of wallet_balance call
 # Response[Int] - Result is integer value of wallet balance in wei
 signal wallet_balance_finished(response) 
+# Signal to get result of token_balance call
+# Response[Int] - Result is integer value of token value associated to address
+signal token_balance_finished(response)
 
 # Signal when user changes their active accounts
 # Currently only one account is active at a time but can potentially be more in the future
@@ -48,7 +51,7 @@ var _ethereum = JavaScript.get_interface('ethereum') setget _protectedSet, _prot
 # Request Callbacks
 var _eth_success_callback = JavaScript.create_callback(self, "_eth_request_success") setget _protectedSet, _protectedGet
 var _eth_failure_callback = JavaScript.create_callback(self, "_eth_request_failure") setget _protectedSet, _protectedGet
-var _wallet_balance_success_callback = JavaScript.create_callback(self, "_wallet_balance_success") setget _protectedSet, _protectedGet
+var _convert_success_result_hti_callback = JavaScript.create_callback(self, "_convert_success_result_hex_to_int") setget _protectedSet, _protectedGet
 
 # Event Callbacks
 var _accounts_callback = JavaScript.create_callback(self, "_on_accounts_changed") setget _protectedSet, _protectedGet
@@ -175,6 +178,12 @@ func _eth_request_failure(args):
     var error = convert_util.to_GDScript(args[1])
     emit_signal(signal_name, {'result': null, 'error': error})
 
+func _convert_success_result_hex_to_int(args):
+    var signal_name = args[0]
+    var result = convert_util.to_GDScript(args[1])
+    var result_as_int = convert_util.hex_to_int(result)
+    emit_signal(signal_name, {'result': result_as_int, 'error': null})
+
 # Checks if client has Metamask installed
 # NOTE - This is not 100% accurate.  Because it is checking a JS property, this can be faked by another wallet provider.
 # See https://docs.metamask.io/guide/ethereum-provider.html#ethereum-isconnected for details
@@ -212,33 +221,10 @@ func client_version():
 # Get the balance of wallet at address in wei
 func wallet_balance(address: String):
     var request_body = _build_request_body('eth_getBalance', address)
-    _request_wrapper(request_body, 'wallet_balance_finished', _wallet_balance_success_callback)
+    _request_wrapper(request_body, 'wallet_balance_finished', _convert_success_result_hti_callback)
 
-# Custom success callback for wallet_balance
-# Returns big-endian byte array of ethereum value in Wei
-func _wallet_balance_success(args):
-    # Get the hex string result
-    var result: String = convert_util.to_GDScript(args[1])
-    # Trim the 0x at the start
-    result = result.right(2)
-    # TODO - Make sure the result can even be stored in a 64bit signed int...
-    # How many hex digits we are trying to handle at a time
-    # hex_to_int returns a 32bit signed int, so most we can do is 28bits aka 7 chars
-    var step = 7
-    # Do the first step
-    var num: int = str("0x" + result.substr(0, step)).hex_to_int()
-    var ind = step
-    # Until we surpass the string
-    while ind <= len(result):
-        # Get up to step characters from the string
-        # Can be less characters if there aren't enough in the string
-        var sub = result.substr(ind, step)
-        # convert to 32bit signed int
-        var hexed = ("0x"+sub).hex_to_int()
-        # Shift num as many steps as we have
-        num = num << (4*len(sub))
-        # Add hexed to num
-        num = num | hexed
-        # Increment index
-        ind += step
-    emit_signal('wallet_balance_finished', {'result': num, 'error': null})
+# Get the balance of a token for an address
+func token_balance(token_address: String, address: String):
+    var action = "0x70a08231" + "0".repeat(24) + address.right(2)
+    var request_body = _build_request_body('eth_call', {'to': token_address, 'data': action})
+    _request_wrapper(request_body, 'token_balance_finished', _convert_success_result_hti_callback)
