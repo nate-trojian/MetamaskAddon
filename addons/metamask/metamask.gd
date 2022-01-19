@@ -1,16 +1,19 @@
 extends Node
 
-# Signal from request_accounts
-# response: Dict - Response dictionary containing "result" and "error", one of which is always null
+# Signal to get result of request_accounts call
+# response: Response[Array[String]] - Result is an array of addresses that the wallet now has permission to use
+# NOTE - At this moment, this will always be of size 0 or 1
 signal request_accounts_finished(response)
-# Signal from switch_chain
-# Success returns null, so it has been omitted
-# Error - Dict containing "code" and "message" keys. Null if call succeeded
+# Signal to get result of switch_to_chain call
+# response: Response[null] - Result is null if call succeeded
 signal switch_chain_finished(response)
-# Signal from client_version
-# success: String - Client version
-# error: Dict - Dict containing "code" and "message" keys. Null if call succeeded
+# Signal to get result of client_version call
+# response: Response[String] - Result is a string of the client's version
 signal client_version_finished(response)
+# Signal to get result of wallet_balance call
+# Response[Int] - Result is integer value of wallet balance in wei
+signal wallet_balance_finished(response) 
+
 # Signal when user changes their active accounts
 # Currently only one account is active at a time but can potentially be more in the future
 # New Accounts - Array of accounts user has changed to AND Application has permissions to see
@@ -45,6 +48,7 @@ var _ethereum = JavaScript.get_interface('ethereum') setget _protectedSet, _prot
 # Request Callbacks
 var _eth_success_callback = JavaScript.create_callback(self, "_eth_request_success") setget _protectedSet, _protectedGet
 var _eth_failure_callback = JavaScript.create_callback(self, "_eth_request_failure") setget _protectedSet, _protectedGet
+var _wallet_balance_success_callback = JavaScript.create_callback(self, "_wallet_balance_success") setget _protectedSet, _protectedGet
 
 # Event Callbacks
 var _accounts_callback = JavaScript.create_callback(self, "_on_accounts_changed") setget _protectedSet, _protectedGet
@@ -203,4 +207,38 @@ func switch_to_chain(chain_id: String):
 # Request the version of the client we are using
 func client_version():
     var request_body = _build_request_body('web3_clientVersion')
-    _window.requestWrapper(request_body, 'client_version_finished')
+    _request_wrapper(request_body, 'client_version_finished')
+
+# Get the balance of wallet at address in wei
+func wallet_balance(address: String):
+    var request_body = _build_request_body('eth_getBalance', address)
+    _request_wrapper(request_body, 'wallet_balance_finished', _wallet_balance_success_callback)
+
+# Custom success callback for wallet_balance
+# Returns big-endian byte array of ethereum value in Wei
+func _wallet_balance_success(args):
+    # Get the hex string result
+    var result: String = convert_util.to_GDScript(args[1])
+    # Trim the 0x at the start
+    result = result.right(2)
+    # TODO - Make sure the result can even be stored in a 64bit signed int...
+    # How many hex digits we are trying to handle at a time
+    # hex_to_int returns a 32bit signed int, so most we can do is 28bits aka 7 chars
+    var step = 7
+    # Do the first step
+    var num: int = str("0x" + result.substr(0, step)).hex_to_int()
+    var ind = step
+    # Until we surpass the string
+    while ind <= len(result):
+        # Get up to step characters from the string
+        # Can be less characters if there aren't enough in the string
+        var sub = result.substr(ind, step)
+        # convert to 32bit signed int
+        var hexed = ("0x"+sub).hex_to_int()
+        # Shift num as many steps as we have
+        num = num << (4*len(sub))
+        # Add hexed to num
+        num = num | hexed
+        # Increment index
+        ind += step
+    emit_signal('wallet_balance_finished', {'result': num, 'error': null})

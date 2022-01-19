@@ -5,6 +5,8 @@ onready var connected_check_box: CheckBox = $PanelSplitContainer/UserPanelContai
 onready var connect_button: Button = $PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/ConnectButton
 onready var chain_id_line_edit: LineEdit = $PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/SwitchChainContainer/ChainIdLineEdit
 onready var switch_chain_button: Button = $PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/SwitchChainContainer/SwitchChainButton
+onready var balance_line_edit: LineEdit = $PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/AddrBalanceContainer/BalanceLineEdit
+onready var balance_button: Button = $PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/AddrBalanceContainer/BalanceButton
 onready var output_text_edit: TextEdit = $PanelSplitContainer/OutputPanelContainer/MarginContainer/VBoxContainer/OutputTextEdit
 
 func _ready():
@@ -43,6 +45,8 @@ func _ready():
     Metamask.connect("chain_disconnected", self, "_on_Metamask_chain_disconnected")
 # warning-ignore:return_value_discarded
     Metamask.connect("message_received", self, "_on_Metamask_message_received")
+# warning-ignore:return_value_discarded
+    Metamask.connect("wallet_balance_finished", self, "_on_Metamask_wallet_balance_finished")
 
 func _print(text: String):
     output_text_edit.text += text + "\n"
@@ -111,3 +115,21 @@ func _on_Metamask_switch_chain_finished(response):
         _print("Reason: " + response.error.message)
         return
     _print("Chain Switch Succeeded...")
+
+func _on_BalanceButton_pressed():
+    var addr = balance_line_edit.text
+    _print("Attempting to get balance of wallet at " + addr)
+    balance_button.disabled = true
+    Metamask.wallet_balance(addr)
+
+func _on_Metamask_wallet_balance_finished(response):
+    balance_button.disabled = false
+    if response.error != null:
+        _print("Wallet Balance Failed...")
+        _print("Reason: " + response.error.message)
+        return
+    _print("Wallet Balance Succeeded...")
+    # Whatever operations you wish to do with the balance (like aggregate wallet balances)
+    # it's better to do it all in Wei, then convert to eth when you want to display a friendlier amount
+    var wei_balance = response.result
+    _print("Wallet balance - " + str(Metamask.convert_util.wei_to_eth(wei_balance)) + " eth")
