@@ -3,8 +3,13 @@ extends Control
 onready var installed_check_box: CheckBox = $PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/InstalledCheckBox
 onready var connected_check_box: CheckBox = $PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/ConnectedCheckBox
 onready var connect_button: Button = $PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/ConnectButton
-onready var chain_id_line_edit: LineEdit = $PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/SwitchChainContainer/ChainIdLineEdit
-onready var switch_chain_button: Button = $PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/SwitchChainContainer/SwitchChainButton
+onready var chain_id_line_edit: LineEdit = $PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/ChainIdLineEdit
+onready var switch_chain_button: Button = $PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/SwitchChainButton
+onready var balance_line_edit: LineEdit = $PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/BalanceLineEdit
+onready var balance_button: Button = $PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/BalanceButton
+onready var token_balance_line_edit: LineEdit = $PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/TokenBalanceAddressLineEdit
+onready var wallet_token_line_edit: LineEdit = $PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/WalletTokenBalanceLineEdit
+onready var token_balance_button: Button = $PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/TokenBalanceButton
 onready var output_text_edit: TextEdit = $PanelSplitContainer/OutputPanelContainer/MarginContainer/VBoxContainer/OutputTextEdit
 
 func _ready():
@@ -43,6 +48,10 @@ func _ready():
     Metamask.connect("chain_disconnected", self, "_on_Metamask_chain_disconnected")
 # warning-ignore:return_value_discarded
     Metamask.connect("message_received", self, "_on_Metamask_message_received")
+# warning-ignore:return_value_discarded
+    Metamask.connect("wallet_balance_finished", self, "_on_Metamask_wallet_balance_finished")
+# warning-ignore:return_value_discarded
+    Metamask.connect("token_balance_finished", self, "_on_Metamask_token_balance_finished")
 
 func _print(text: String):
     output_text_edit.text += text + "\n"
@@ -111,3 +120,37 @@ func _on_Metamask_switch_chain_finished(response):
         _print("Reason: " + response.error.message)
         return
     _print("Chain Switch Succeeded...")
+
+func _on_BalanceButton_pressed():
+    var addr = balance_line_edit.text
+    _print("Attempting to get balance of wallet at " + addr)
+    balance_button.disabled = true
+    Metamask.wallet_balance(addr)
+
+func _on_Metamask_wallet_balance_finished(response):
+    balance_button.disabled = false
+    if response.error != null:
+        _print("Wallet Balance Failed...")
+        _print("Reason: " + response.error.message)
+        return
+    _print("Wallet Balance Succeeded...")
+    # Whatever operations you wish to do with the balance (like aggregate wallet balances)
+    # it's better to do it all in Wei, then when you want to display it convert it to a friendlier amount
+    var wei_balance = response.result
+    var eth_balance = Metamask.convert_util.convert_wei(wei_balance, Metamask.convert_util.Wei.to_Eth)
+    _print("Wallet balance - " + str(eth_balance) + " eth")
+
+func _on_TokenBalanceButton_pressed():
+    var token_address = token_balance_line_edit.text
+    var wallet_address = wallet_token_line_edit.text
+    token_balance_button.disabled = true
+    Metamask.token_balance(token_address, wallet_address)
+
+func _on_Metamask_token_balance_finished(response):
+    token_balance_button.disabled = false
+    if response.error != null:
+        _print("Token Balance Failed...")
+        _print("Reason: " + response.error.message)
+        return
+    _print("Token Balance Succeeded...")
+    _print("Token Balance - " + str(response.result))

@@ -1,16 +1,22 @@
 extends Node
 
-# Signal from request_accounts
-# response: Dict - Response dictionary containing "result" and "error", one of which is always null
+# Signal to get result of request_accounts call
+# response: Response[Array[String]] - Result is an array of addresses that the wallet now has permission to use
+# NOTE - At this moment, this will always be of size 0 or 1
 signal request_accounts_finished(response)
-# Signal from switch_chain
-# Success returns null, so it has been omitted
-# Error - Dict containing "code" and "message" keys. Null if call succeeded
+# Signal to get result of switch_to_chain call
+# response: Response[null] - Result is null if call succeeded
 signal switch_chain_finished(response)
-# Signal from client_version
-# success: String - Client version
-# error: Dict - Dict containing "code" and "message" keys. Null if call succeeded
+# Signal to get result of client_version call
+# response: Response[String] - Result is a string of the client's version
 signal client_version_finished(response)
+# Signal to get result of wallet_balance call
+# Response[Int] - Result is integer value of wallet balance in wei
+signal wallet_balance_finished(response) 
+# Signal to get result of token_balance call
+# Response[Int] - Result is integer value of token value associated to address
+signal token_balance_finished(response)
+
 # Signal when user changes their active accounts
 # Currently only one account is active at a time but can potentially be more in the future
 # New Accounts - Array of accounts user has changed to AND Application has permissions to see
@@ -45,6 +51,7 @@ var _ethereum = JavaScript.get_interface('ethereum') setget _protectedSet, _prot
 # Request Callbacks
 var _eth_success_callback = JavaScript.create_callback(self, "_eth_request_success") setget _protectedSet, _protectedGet
 var _eth_failure_callback = JavaScript.create_callback(self, "_eth_request_failure") setget _protectedSet, _protectedGet
+var _convert_success_result_hti_callback = JavaScript.create_callback(self, "_convert_success_result_hex_to_int") setget _protectedSet, _protectedGet
 
 # Event Callbacks
 var _accounts_callback = JavaScript.create_callback(self, "_on_accounts_changed") setget _protectedSet, _protectedGet
@@ -171,6 +178,12 @@ func _eth_request_failure(args):
     var error = convert_util.to_GDScript(args[1])
     emit_signal(signal_name, {'result': null, 'error': error})
 
+func _convert_success_result_hex_to_int(args):
+    var signal_name = args[0]
+    var result = convert_util.to_GDScript(args[1])
+    var result_as_int = convert_util.hex_to_int(result)
+    emit_signal(signal_name, {'result': result_as_int, 'error': null})
+
 # Checks if client has Metamask installed
 # NOTE - This is not 100% accurate.  Because it is checking a JS property, this can be faked by another wallet provider.
 # See https://docs.metamask.io/guide/ethereum-provider.html#ethereum-isconnected for details
@@ -203,4 +216,15 @@ func switch_to_chain(chain_id: String):
 # Request the version of the client we are using
 func client_version():
     var request_body = _build_request_body('web3_clientVersion')
-    _window.requestWrapper(request_body, 'client_version_finished')
+    _request_wrapper(request_body, 'client_version_finished')
+
+# Get the balance of wallet at address in wei
+func wallet_balance(address: String):
+    var request_body = _build_request_body('eth_getBalance', address)
+    _request_wrapper(request_body, 'wallet_balance_finished', _convert_success_result_hti_callback)
+
+# Get the balance of a token for an address
+func token_balance(token_address: String, address: String):
+    var action = "0x70a08231" + "0".repeat(24) + address.right(2)
+    var request_body = _build_request_body('eth_call', {'to': token_address, 'data': action})
+    _request_wrapper(request_body, 'token_balance_finished', _convert_success_result_hti_callback)

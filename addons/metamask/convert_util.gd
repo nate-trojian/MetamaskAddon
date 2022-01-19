@@ -6,6 +6,15 @@ class_name JavaScriptConvert
 var _document = JavaScript.get_interface("document") setget _protectedSet, _protectedGet
 var _window = JavaScript.get_interface("window") setget _protectedSet, _protectedGet
 
+enum Wei {
+    to_Gwei
+    to_Eth
+   }
+var _wei_convert = {
+    Wei.to_Gwei: float("1e9"),
+    Wei.to_Eth: float("1e18")
+}
+
 func _protectedSet(_val):
     push_error("cannot access protected variable")
 
@@ -69,3 +78,36 @@ func dict_to_js(dict: Dictionary) -> JavaScriptObject:
     for key in dict:
         val[key] = dict[key]
     return val
+
+# Convert hex string to 64bit signed int
+func hex_to_int(hex: String) -> int:
+    # Save hex in temp variable
+    var val = hex
+    # If begins with 0x, strip it off
+    if val.begins_with("0x"):
+        val = val.right(2)
+    # TODO - Make sure the result can even be stored in a 64bit signed int...
+    # How many hex digits we are trying to handle at a time
+    # hex_to_int returns a 32bit signed int, so most we can do is 28bits aka 7 chars
+    var step = 7
+    # Do the first step
+    var num: int = str("0x" + val.substr(0, step)).hex_to_int()
+    var ind = step
+    # Until we surpass the string
+    while ind <= len(val):
+        # Get up to step characters from the string
+        # Can be less characters if there aren't enough in the string
+        var sub = val.substr(ind, step)
+        # convert to 32bit signed int
+        var hexed = ("0x"+sub).hex_to_int()
+        # Shift num as many steps as we have
+        num = num << (4*len(sub))
+        # Add hexed to num
+        num = num | hexed
+        # Increment index
+        ind += step
+    return num
+
+# Convert Wei int to another base
+func convert_wei(wei: int, factor: int = Wei.to_Eth) -> float:
+    return wei / _wei_convert[factor]
