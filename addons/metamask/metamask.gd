@@ -11,10 +11,10 @@ signal switch_chain_finished(response)
 # response: Response[String] - Result is a string of the client's version
 signal client_version_finished(response)
 # Signal to get result of wallet_balance call
-# Response[Int] - Result is integer value of wallet balance in wei
+# Response[Int] - Result is the integer value of wallet balance in wei
 signal wallet_balance_finished(response) 
 # Signal to get result of token_balance call
-# Response[Int] - Result is integer value of token value associated to address
+# Response[Int] - Result is the integer value of the token associated to the address
 signal token_balance_finished(response)
 # Signal to get result of add_eth_chain call
 # Response[null] - Result is null if call succeeded
@@ -23,7 +23,7 @@ signal add_eth_chain_finished(response)
 # Response[null] - Result is null if call succeeded
 signal add_custom_token_finished(response)
 # Signal to get result of current_gas_price call
-# Response[Int] - Result is integer value of current gas price in wei
+# Response[Int] - Result is the integer value of current gas price in wei
 signal current_gas_price_finished(response)
 # Signal to get result of send_token call
 # Response[String] - Result is a hex encoded transaction hash
@@ -284,9 +284,10 @@ func current_gas_price():
     _request_wrapper(request_body, 'current_gas_price_finished', _convert_success_result_hti_callback)
 
 # Send some amount of an ERC20 token from one account to another
-func send_token(from_address: String, token_address: String, recipient_address: String, amount: float,
+func send_token(from_address: String, recipient_address: String, token_address: String, amount: float,
                 gas_limit = null, gas_price = null):
     var amount_hex = '%x' % (amount * float('1e18'))
+    # Transfer action hex
     var action = '0xa9059cbb' + "0".repeat(24) + recipient_address.right(2) + "0".repeat(64-len(amount_hex)) + amount_hex
     var request_dict = {
         'from': from_address,
@@ -296,12 +297,12 @@ func send_token(from_address: String, token_address: String, recipient_address: 
     if gas_limit != null:
         request_dict["gas"] = '%x' % gas_limit
     if gas_price != null:
-        request_dict['gasPrice'] = '%x' % gas_price
+        request_dict['gasPrice'] = '%x' % (gas_price * float('1e9'))
     var request_body = _build_request_body('eth_sendTransaction', request_dict)
     _request_wrapper(request_body, 'send_token_finished')
 
 # Send some amount of ETH from one account to another
-func send_eth(from_address: String, recipient_address: String, amount: float, gas_limit: int = 21000):
+func send_eth(from_address: String, recipient_address: String, amount: float, gas_limit: int = 21000, gas_price = null):
     var amount_hex = '%x' % (amount * float('1e18'))
     var gas_hex = '%x' % gas_limit
     var request_dict = {
@@ -310,5 +311,7 @@ func send_eth(from_address: String, recipient_address: String, amount: float, ga
         'value': amount_hex,
         'gas': gas_hex,
     }
+    if gas_price != null:
+        request_dict['gasPrice'] = '%x' % (gas_price * float('1e9'))
     var request_body = _build_request_body('eth_sendTransaction', request_dict)
     _request_wrapper(request_body, 'send_eth_finished')
