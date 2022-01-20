@@ -11,11 +11,26 @@ signal switch_chain_finished(response)
 # response: Response[String] - Result is a string of the client's version
 signal client_version_finished(response)
 # Signal to get result of wallet_balance call
-# Response[Int] - Result is integer value of wallet balance in wei
+# Response[Int] - Result is the integer value of wallet balance in wei
 signal wallet_balance_finished(response) 
 # Signal to get result of token_balance call
-# Response[Int] - Result is integer value of token value associated to address
+# Response[Int] - Result is the integer value of the token associated to the address
 signal token_balance_finished(response)
+# Signal to get result of add_eth_chain call
+# Response[null] - Result is null if call succeeded
+signal add_eth_chain_finished(response)
+# Signal to get result of add_custom_token call
+# Response[null] - Result is null if call succeeded
+signal add_custom_token_finished(response)
+# Signal to get result of current_gas_price call
+# Response[Int] - Result is the integer value of current gas price in wei
+signal current_gas_price_finished(response)
+# Signal to get result of send_token call
+# Response[String] - Result is a hex encoded transaction hash
+signal send_token_finished(response)
+# Signal to get result of send_eth call
+# Response[String] - Result is a hex encoded transaction hash
+signal send_eth_finished(response)
 
 # Signal when user changes their active accounts
 # Currently only one account is active at a time but can potentially be more in the future
@@ -138,7 +153,7 @@ func _on_message_received(message):
     emit_signal("message_received", val)
 
 # Helper method for building the request body for RPC calls
-func _build_request_body(method: String, params = null) -> JavaScriptObject:
+func _build_request_body(method: String, params = null, wrap_in_array = true) -> JavaScriptObject:
     var request_body = JavaScript.create_object('Object')
     request_body['method'] = method
     match typeof(params):
@@ -149,12 +164,18 @@ func _build_request_body(method: String, params = null) -> JavaScriptObject:
             request_body['params'] = convert_util.arr_to_js(params)
         TYPE_DICTIONARY:
             var params_body = convert_util.dict_to_js(params)
-            request_body['params'] = JavaScript.create_object('Array', params_body)
+            if wrap_in_array:
+                request_body['params'] = JavaScript.create_object('Array', params_body)
+            else:
+                request_body['params'] = params_body
         _:
             # If we give just a single primitive, give it in an array
             # Looking at you eth_getBalance
-            request_body['params'] = JavaScript.create_object('Array', 1)
-            request_body['params'][0] = params
+            if wrap_in_array:
+                request_body['params'] = JavaScript.create_object('Array', 1)
+                request_body['params'][0] = params
+            else:
+                request_body['params'] = params
     return request_body
 
 # Request wrapper so we can have default arguments
@@ -228,3 +249,69 @@ func token_balance(token_address: String, address: String):
     var action = "0x70a08231" + "0".repeat(24) + address.right(2)
     var request_body = _build_request_body('eth_call', {'to': token_address, 'data': action})
     _request_wrapper(request_body, 'token_balance_finished', _convert_success_result_hti_callback)
+
+# Add a custom ethereum based chain to your wallet
+func add_eth_chain(chain_id: String, chain_name: String, rpc_url: String,
+                    currency_symbol = null, block_explorer_url = null):
+    var request_dict = {
+        'chainId': chain_id,
+        'chainName': chain_name,
+        'rpcUrls': convert_util.arr_to_js([rpc_url]),
+    }
+    if currency_symbol != null:
+        request_dict['nativeCurrency'] = convert_util.dict_to_js({'symbol': currency_symbol, 'decimals': 18})
+    if block_explorer_url != null:
+        request_dict['blockExplorerUrls'] = convert_util.arr_to_js([block_explorer_url])
+    var request_body = _build_request_body('wallet_addEthereumChain', request_dict)
+    _request_wrapper(request_body, 'add_eth_chain_finished')
+
+# Tell Metamask to track a specified ERC20 token in the connected account
+func add_custom_token(token_address: String, token_symbol: String, image_url: String):
+    var request_body = _build_request_body('wallet_watchAsset', {
+        'type': 'ERC20',
+        'options': convert_util.dict_to_js({
+            'address': token_address,
+            'symbol': token_symbol,
+            'decimals': 18,
+            'image': image_url,
+        }),
+    }, false)
+    _request_wrapper(request_body, 'add_custom_token_finished')
+
+# Get the current gas price in Wei
+func current_gas_price():
+    var request_body = _build_request_body('eth_gasPrice')
+    _request_wrapper(request_body, 'current_gas_price_finished', _convert_success_result_hti_callback)
+
+# Send some amount of an ERC20 token from one account to another
+func send_token(from_address: String, recipient_address: String, token_address: String, amount: float,
+                gas_limit = null, gas_price = null):
+    var amount_hex = '%x' % (amount * float('1e18'))
+    # Transfer action hex
+    var action = '0xa9059cbb' + "0".repeat(24) + recipient_address.right(2) + "0".repeat(64-len(amount_hex)) + amount_hex
+    var request_dict = {
+        'from': from_address,
+        'to': token_address,
+        'data': action,
+    }
+    if gas_limit != null:
+        request_dict["gas"] = '%x' % gas_limit
+    if gas_price != null:
+        request_dict['gasPrice'] = '%x' % (gas_price * float('1e9'))
+    var request_body = _build_request_body('eth_sendTransaction', request_dict)
+    _request_wrapper(request_body, 'send_token_finished')
+
+# Send some amount of ETH from one account to another
+func send_eth(from_address: String, recipient_address: String, amount: float, gas_limit: int = 21000, gas_price = null):
+    var amount_hex = '%x' % (amount * float('1e18'))
+    var gas_hex = '%x' % gas_limit
+    var request_dict = {
+        'from': from_address,
+        'to': recipient_address,
+        'value': amount_hex,
+        'gas': gas_hex,
+    }
+    if gas_price != null:
+        request_dict['gasPrice'] = '%x' % (gas_price * float('1e9'))
+    var request_body = _build_request_body('eth_sendTransaction', request_dict)
+    _request_wrapper(request_body, 'send_eth_finished')

@@ -20,14 +20,14 @@ __meta__ = {
 
 [node name="UserPanelContainer" type="PanelContainer" parent="PanelSplitContainer"]
 margin_right = 508.0
-margin_bottom = 600.0
+margin_bottom = 612.0
 size_flags_horizontal = 3
 
 [node name="MarginContainer" type="MarginContainer" parent="PanelSplitContainer/UserPanelContainer"]
 margin_left = 7.0
 margin_top = 7.0
 margin_right = 501.0
-margin_bottom = 593.0
+margin_bottom = 605.0
 custom_constants/margin_right = 25
 custom_constants/margin_top = 25
 custom_constants/margin_left = 25
@@ -37,7 +37,7 @@ custom_constants/margin_bottom = 25
 margin_left = 25.0
 margin_top = 25.0
 margin_right = 469.0
-margin_bottom = 561.0
+margin_bottom = 573.0
 
 [node name="InstalledCheckBox" type="CheckBox" parent="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer"]
 margin_right = 444.0
@@ -127,17 +127,91 @@ margin_right = 444.0
 margin_bottom = 284.0
 text = "Get Token Balance"
 
+[node name="HSeparator4" type="HSeparator" parent="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer"]
+margin_top = 288.0
+margin_right = 444.0
+margin_bottom = 292.0
+
+[node name="AddBinanceButton" type="Button" parent="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer"]
+margin_top = 296.0
+margin_right = 444.0
+margin_bottom = 316.0
+text = "Add Binance Chain"
+
+[node name="AddMaticButton" type="Button" parent="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer"]
+margin_top = 320.0
+margin_right = 444.0
+margin_bottom = 340.0
+text = "Add Matic Chain"
+
+[node name="HSeparator5" type="HSeparator" parent="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer"]
+margin_top = 344.0
+margin_right = 444.0
+margin_bottom = 348.0
+
+[node name="AddEnjinTokenButton" type="Button" parent="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer"]
+margin_top = 352.0
+margin_right = 444.0
+margin_bottom = 372.0
+text = "Add Enjin Token"
+
+[node name="HSeparator6" type="HSeparator" parent="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer"]
+margin_top = 376.0
+margin_right = 444.0
+margin_bottom = 380.0
+
+[node name="GetGasButton" type="Button" parent="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer"]
+margin_top = 384.0
+margin_right = 444.0
+margin_bottom = 404.0
+text = "Get Current Gas Price"
+
+[node name="HSeparator7" type="HSeparator" parent="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer"]
+margin_top = 408.0
+margin_right = 444.0
+margin_bottom = 412.0
+
+[node name="TransferFromLineEdit" type="LineEdit" parent="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer"]
+margin_top = 416.0
+margin_right = 444.0
+margin_bottom = 440.0
+placeholder_text = "Transfer Source Address"
+
+[node name="TransferTokenLineEdit" type="LineEdit" parent="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer"]
+margin_top = 444.0
+margin_right = 444.0
+margin_bottom = 468.0
+placeholder_text = "Address of Token to Transfer"
+
+[node name="TransferToLineEdit" type="LineEdit" parent="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer"]
+margin_top = 472.0
+margin_right = 444.0
+margin_bottom = 496.0
+placeholder_text = "Transfer Recipient"
+
+[node name="TransferAmountLineEdit" type="LineEdit" parent="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer"]
+margin_top = 500.0
+margin_right = 444.0
+margin_bottom = 524.0
+placeholder_text = "Transfer Amount"
+
+[node name="TransferButton" type="Button" parent="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer"]
+margin_top = 528.0
+margin_right = 444.0
+margin_bottom = 548.0
+text = "Transfer"
+
 [node name="OutputPanelContainer" type="PanelContainer" parent="PanelSplitContainer"]
 margin_left = 516.0
 margin_right = 1024.0
-margin_bottom = 600.0
+margin_bottom = 612.0
 size_flags_horizontal = 3
 
 [node name="MarginContainer" type="MarginContainer" parent="PanelSplitContainer/OutputPanelContainer"]
 margin_left = 7.0
 margin_top = 7.0
 margin_right = 501.0
-margin_bottom = 593.0
+margin_bottom = 605.0
 custom_constants/margin_right = 10
 custom_constants/margin_top = 10
 custom_constants/margin_left = 10
@@ -147,7 +221,7 @@ custom_constants/margin_bottom = 10
 margin_left = 10.0
 margin_top = 10.0
 margin_right = 484.0
-margin_bottom = 576.0
+margin_bottom = 588.0
 
 [node name="OutputLabel" type="Label" parent="PanelSplitContainer/OutputPanelContainer/MarginContainer/VBoxContainer"]
 margin_right = 474.0
@@ -157,7 +231,7 @@ text = "Output Log"
 [node name="OutputTextEdit" type="TextEdit" parent="PanelSplitContainer/OutputPanelContainer/MarginContainer/VBoxContainer"]
 margin_top = 18.0
 margin_right = 474.0
-margin_bottom = 566.0
+margin_bottom = 578.0
 size_flags_vertical = 3
 readonly = true
 
@@ -165,3 +239,8 @@ readonly = true
 [connection signal="pressed" from="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/SwitchChainButton" to="." method="_on_SwitchChainButton_pressed"]
 [connection signal="pressed" from="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/BalanceButton" to="." method="_on_BalanceButton_pressed"]
 [connection signal="pressed" from="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/TokenBalanceButton" to="." method="_on_TokenBalanceButton_pressed"]
+[connection signal="pressed" from="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/AddBinanceButton" to="." method="_on_AddBinanceButton_pressed"]
+[connection signal="pressed" from="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/AddMaticButton" to="." method="_on_AddMaticButton_pressed"]
+[connection signal="pressed" from="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/AddEnjinTokenButton" to="." method="_on_AddEnjinTokenButton_pressed"]
+[connection signal="pressed" from="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/GetGasButton" to="." method="_on_GetGasButton_pressed"]
+[connection signal="pressed" from="PanelSplitContainer/UserPanelContainer/MarginContainer/UserContainer/TransferButton" to="." method="_on_TransferButton_pressed"]
