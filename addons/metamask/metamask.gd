@@ -28,6 +28,9 @@ signal current_gas_price_finished(response)
 # Signal to get result of send_token call
 # Response[String] - Result is a hex encoded transaction hash
 signal send_token_finished(response)
+# Signal to get result of send_eth call
+# Response[String] - Result is a hex encoded transaction hash
+signal send_eth_finished(response)
 
 # Signal when user changes their active accounts
 # Currently only one account is active at a time but can potentially be more in the future
@@ -247,6 +250,7 @@ func token_balance(token_address: String, address: String):
     var request_body = _build_request_body('eth_call', {'to': token_address, 'data': action})
     _request_wrapper(request_body, 'token_balance_finished', _convert_success_result_hti_callback)
 
+# Add a custom ethereum based chain to your wallet
 func add_eth_chain(chain_id: String, chain_name: String, rpc_url: String,
                     currency_symbol = null, block_explorer_url = null):
     var request_dict = {
@@ -261,6 +265,7 @@ func add_eth_chain(chain_id: String, chain_name: String, rpc_url: String,
     var request_body = _build_request_body('wallet_addEthereumChain', request_dict)
     _request_wrapper(request_body, 'add_eth_chain_finished')
 
+# Tell Metamask to track a specified ERC20 token in the connected account
 func add_custom_token(token_address: String, token_symbol: String, image_url: String):
     var request_body = _build_request_body('wallet_watchAsset', {
         'type': 'ERC20',
@@ -273,19 +278,37 @@ func add_custom_token(token_address: String, token_symbol: String, image_url: St
     }, false)
     _request_wrapper(request_body, 'add_custom_token_finished')
 
+# Get the current gas price in Wei
 func current_gas_price():
     var request_body = _build_request_body('eth_gasPrice')
     _request_wrapper(request_body, 'current_gas_price_finished', _convert_success_result_hti_callback)
 
-func send_token(from_address: String, token_address: String, recipient_address: String, amount: int, gas = null):
+# Send some amount of an ERC20 token from one account to another
+func send_token(from_address: String, token_address: String, recipient_address: String, amount: float,
+                gas_limit = null, gas_price = null):
     var amount_hex = '%x' % (amount * float('1e18'))
-    print(amount_hex)
     var action = '0xa9059cbb' + "0".repeat(24) + recipient_address.right(2) + "0".repeat(64-len(amount_hex)) + amount_hex
-    print(action)
     var request_dict = {
         'from': from_address,
         'to': token_address,
         'data': action,
     }
+    if gas_limit != null:
+        request_dict["gas"] = '%x' % gas_limit
+    if gas_price != null:
+        request_dict['gasPrice'] = '%x' % gas_price
     var request_body = _build_request_body('eth_sendTransaction', request_dict)
     _request_wrapper(request_body, 'send_token_finished')
+
+# Send some amount of ETH from one account to another
+func send_eth(from_address: String, recipient_address: String, amount: float, gas_limit: int = 21000):
+    var amount_hex = '%x' % (amount * float('1e18'))
+    var gas_hex = '%x' % gas_limit
+    var request_dict = {
+        'from': from_address,
+        'to': recipient_address,
+        'value': amount_hex,
+        'gas': gas_hex,
+    }
+    var request_body = _build_request_body('eth_sendTransaction', request_dict)
+    _request_wrapper(request_body, 'send_eth_finished')
