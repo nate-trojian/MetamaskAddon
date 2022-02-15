@@ -5,7 +5,9 @@ Addon for the Godot Engine for integrating with Metamask
 
 ## Install
 ### Download from the Godot Asset Library
-_soon_
+https://godotengine.org/asset-library/asset/1189
+
+You can also search for `Metamask` in the Godot Asset Library
 
 ### From ZIP
 1. Download the latest zip [here](https://github.com/nate-trojian/MetamaskAddon/archive/refs/heads/main.zip)
